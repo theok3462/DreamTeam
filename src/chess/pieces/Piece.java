@@ -20,7 +20,6 @@ public abstract class Piece {
 
     /**
      * Constructs a Piece with the specified color and initial position.
-     *
      * @param white True for white, false for black
      * @param position Initial position of the piece on the board
      */
@@ -31,7 +30,6 @@ public abstract class Piece {
 
     /**
      * Returns whether the piece is white.
-     *
      * @return True if the piece is white, false if black
      */
     public boolean isWhite() {
@@ -40,7 +38,6 @@ public abstract class Piece {
 
     /**
      * Returns the current position of the piece.
-     *
      * @return Current Position object
      */
     public Position getPosition() {
@@ -49,7 +46,6 @@ public abstract class Piece {
 
     /**
      * Sets a new position for the piece.
-     *
      * @param position New Position object to set
      */
     public void setPosition(Position position) {
