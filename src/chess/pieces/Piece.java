@@ -65,7 +65,6 @@ public abstract class Piece {
     /**
      * Returns true if this piece can attack the given position.
      * Subclasses must implement this method for consistent check/checkmate detection.
-     *
      * @param board Current state of the board
      * @param pos Position to check
      * @return True if this piece can attack the given position, false otherwise
