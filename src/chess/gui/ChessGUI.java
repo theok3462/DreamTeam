@@ -12,10 +12,13 @@ public class ChessGUI extends JFrame {
 
     private int selectedRow = -1;
     private int selectedCol = -1;
-
     private boolean darkMode = false;
 
     public ChessGUI() {
+        try { 
+            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); 
+        } catch (Exception e) {}
+
         setTitle("Chess Game");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -207,4 +210,3 @@ public class ChessGUI extends JFrame {
         SwingUtilities.invokeLater(() -> new ChessGUI());
     }
 }
-
