@@ -1,394 +1,203 @@
-🌟 Dream Team — Chess Game GUI (CS 3354 – Phase 3)
+# **Dream Team — Chess Game GUI (CS 3354 – Phase 3)**  
+### Fall 2025 — Final Project Submission
 
-Fall 2025 – Final Project Submission
+**Team Members:**  
+- Theo Kliewer  
+- Mario Mondragon  
+- Ikram Yahya  
 
+**Course:** CS 3354 — Object-Oriented Design  
+**Project:** Chess Game — Phase 3
 
+---
 
-👥 Team Members:
+# **Project Overview**
 
+This project implements a fully interactive **Chess Game GUI** using **Java** and **Swing**.  
+Phase 3 delivers complete gameplay functionality, integrating both backend logic and front-end user interface.
 
+This phase includes:
 
-Theo Kliewer
+- Complete backend move logic  
+- Capture rules  
+- Check and checkmate detection  
+- Interactive graphical board  
+- Undo functionality  
+- Move history display  
+- Captured pieces panel  
+- Player timers  
+- Dark mode  
+- Board color customization  
+- Multiple piece themes  
+- Save & Load  
+- Settings window  
+- UML class diagram  
+- Extra credit features
 
+---
 
+# **Features Implemented**
 
-Mario Mondragon
+## **1. Game Logic**
+- Legal movement rules for all pieces  
+- Move validation (prevents illegal moves)  
+- Capture mechanics  
+- Check and checkmate detection  
+- Turn switching  
+- Undo last move  
 
+---
 
+## **2. Graphical User Interface**
+- Click-to-select piece, click-to-move  
+- Highlighting of selected pieces and legal moves  
+- Move history sidebar  
+- Captured pieces display  
+- Player timers (Start, Stop, Reset)  
+- Menu bar with:
+  - New Game  
+  - Save  
+  - Load  
+  - Settings  
+- Optional dark mode for interface
 
-Ikram Yahya
+---
 
+## **3. Customization Options**
+- Light/dark board square color selection  
+- Theme selection (Default, Vibrant, Ocean)  
+- Adjustable piece size  
+- Optional light or dark user interface theme  
 
+---
 
-📚 Course: CS 3354 – Object-Oriented Design
+# **How to Compile & Run the Chess Game**
 
-🎯 Project: Chess Game – Phase 3 (GUI + Full Game Integration)
+## **Option 1 — Run Using IntelliJ IDEA (Recommended)**
 
+1. Open **IntelliJ IDEA**  
+2. Click **File → Open…**  
+3. Select your project folder:  
 
+   ```
+   DreamTeam/
+   ```
 
-📝 Project Overview
+4. Let IntelliJ finish indexing  
+5. Open the file:  
 
+   ```
+   src/chessgui/ChessApp.java
+   ```
 
+6. Click the **Run** button (green triangle) next to `main`  
+7. The game will launch  
 
-This project delivers a fully interactive Java Swing-based Chess Game that integrates the complete backend logic with a dynamic, user-friendly GUI.
+---
 
+## **Option 2 — Run From Terminal (Windows)**
 
+1. Open **Command Prompt**  
+2. Go to your project directory:
 
-Phase 3 focuses on:
+   ```bat
+   cd C:\Users\surfaceLaptop4\OneDrive\Desktop\DreamTeam
+   ```
 
+3. Compile all Java files:
 
+   ```bat
+   javac src\**\*.java -d out
+   ```
 
-✨ Complete gameplay experience
+4. Run the game:
 
-✨ Visual board interaction
+   ```bat
+   java -cp out chessgui.ChessApp
+   ```
 
-✨ Check \& checkmate detection
+---
 
-✨ Timers, move history, captured pieces
+# **Screenshots**
 
-✨ Custom themes \& colors
+### **1. New Game Screen**
+![New Game](screenshots/new_game.png)
 
-✨ Save / Load system
+### **2. Mid-Game Example**
+![Mid Game](screenshots/mid_game.png)
 
-✨ Dark mode
+### **3. Board & Piece Settings**
+![Board Settings](screenshots/board_settings.png)
 
-✨ Extra credit features
+### **4. Theme Preview**
+![Theme Board](screenshots/theme_board.png)
 
+### **5. Dark Square Color Picker**
+![Dark Picker](screenshots/dark_square_picker.png)
 
+---
 
-🎮 Features Implemented
+# **UML Class Diagram**
 
-✔️ Game Logic
+Includes:  
+- Piece inheritance (Pawn, Rook, Knight, Bishop, Queen, King)  
+- Board–Piece composition  
+- GameState–Board relationship  
+- GUI structure (ChessFrame → Panels)  
+- Theme/Settings class interactions  
 
+File located at:
 
+```
+uml/phase3_uml.png
+```
 
-♟️ Legal piece movement rules
+---
 
+# **Extra Credit Features Completed**
 
+| Feature                       | Status |
+|-------------------------------|--------|
+| Dark mode                     | Yes    |
+| Custom board colors           | Yes    |
+| Multiple piece themes         | Yes    |
+| Player timers                 | Yes    |
+| Move history                  | Yes    |
+| Captured pieces panel         | Yes    |
+| Save & Load                   | Yes    |
+| Settings window               | Yes    |
+| Undo move                     | Yes    |
 
-❌ Illegal move prevention
+---
 
+# **Project Structure**
 
-
-🎯 Captures + turn switching
-
-
-
-⚠️ Check detection
-
-
-
-👑 Checkmate detection
-
-
-
-↩️ Undo last move
-
-
-
-✔️ Graphical User Interface
-
-
-
-🖱️ Click-to-select piece
-
-
-
-🎯 Highlight legal squares
-
-
-
-📜 Move history panel
-
-
-
-🎒 Captured pieces section
-
-
-
-⏱️ Player timers (Start / Stop / Reset)
-
-
-
-🖥️ Menu bar options:
-
-
-
-New Game
-
-
-
-Save
-
-
-
-Load
-
-
-
-Settings
-
-
-
-\- Full Dark Mode support
-
-
-
-\- Customization Options
-
-
-
-\- Custom board light/dark square colors
-
-
-
-\- Multiple piece themes:
-
-
-
-Default
-
-
-
-Vibrant
-
-
-
-Ocean
-
-
-
-🔍 Adjustable piece sizes
-
-
-
-⚫/⚪ Dark / Light UI toggle
-
-
-
-🚀 How to Compile \& Run the Chess Game
-
-🖥️ OPTION 1 — Run Using IntelliJ IDEA (Recommended)
-
-
-
-Open IntelliJ IDEA
-
-
-
-Go to File → Open…
-
-
-
-Select your project folder:
-
-
-
-DreamTeam/
-
-
-
-
-
-Wait for IntelliJ to index the project
-
-
-
-Open:
-
-
-
-src/chessgui/ChessApp.java
-
-
-
-
-
-Click the green ▶ RUN button next to the main method
-
-
-
-Enjoy the game!
-
-
-
-🖥️ OPTION 2 — Run from Windows Terminal
-
-
-
-Open Command Prompt
-
-
-
-Navigate to the project folder:
-
-
-
-cd C:\\Users\\surfaceLaptop4\\OneDrive\\Desktop\\DreamTeam
-
-
-
-
-
-Compile all source files:
-
-
-
-javac src\\\*\*\\\*.java -d out
-
-
-
-
-
-Run the GUI:
-
-
-
-java -cp out chessgui.ChessApp
-
-
-
-📸 Screenshots
-
-&nbsp;1️⃣ New Game Screen
-
-
-
-&nbsp;2️⃣ Mid Game
-
-
-
-&nbsp;3️⃣ Board \& Piece Settings
-
-
-
-&nbsp;4️⃣ Theme Preview
-
-
-
-&nbsp;5️⃣ Dark Square Color Picker
-
-
-
-📊 UML Class Diagram
-
-
-
-The UML diagram illustrates:
-
-
-
-🧬 Piece inheritance hierarchy
-
-
-
-📦 Composition: Board → Pieces
-
-
-
-🔁 GameState ↔ Board interaction
-
-
-
-🖼️ GUI architecture (ChessFrame → Panels)
-
-
-
-🎨 Theme \& Settings system
-
-
-
-📁 Located at:
-
-
-
-uml/phase3\_uml.png
-
-
-
-🏆 Extra Credit Features Completed
-
-Extra Feature	Status
-
-\- Dark Mode	✅
-
-\- Custom Board Colors	✅
-
-\- Multiple Piece Themes	✅
-
-\- Timers	✅
-
-\- Move History	✅
-
-\- Captured Pieces	✅
-
-\- Save \& Load	✅
-
-\- Settings Window	✅
-
-\- Undo Move	✅
-
-📂 Project Structure
-
+```
 src/
+ ├─ chess/        (Backend logic)
+ ├─ chessgui/     (GUI components)
+ ├─ pieces/        (Piece images by theme)
+ ├─ screenshots/   (README screenshots)
+ └─ uml/           (UML diagrams)
+```
 
-&nbsp;├─ chess/        ← Backend game logic
+---
 
-&nbsp;├─ chessgui/     ← GUI components
+# **Course Requirements Covered**
 
-&nbsp;├─ pieces/       ← Piece images (themes)
+- Backend + GUI integration  
+- Check + checkmate logic  
+- Move history tracking  
+- Captured pieces display  
+- Customization features  
+- Full UML diagram  
+- Clean and organized repository  
+- Detailed README  
+- Presentation-friendly implementation  
 
-&nbsp;├─ screenshots/  ← README images
+---
 
-&nbsp;└─ uml/          ← UML diagrams
+# **Final Notes**
 
-
-
-🧑‍🏫 Course Requirements Completed
-
-
-
-✔ Backend logic connected to GUI
-
-
-
-✔ Check \& checkmate detection
-
-
-
-✔ GUI board with full interaction
-
-
-
-✔ Extra credit features implemented
-
-
-
-✔ UML diagram included
-
-
-
-✔ Clean repository structure
-
-
-
-✔ Detailed README
-
-
-
-✔ Clean, descriptive commits
-
-
-
-🎉 Final Notes
-
-
-
-This project delivers a polished full chess game built entirely in Java using Swing.
-
-The game includes dynamic visuals, real-time logic, customization features, and full gameplay mechanics.
-
-
-
-Enjoy playing! 
-
+This project provides a complete and fully functional **Java Swing Chess Game** with advanced gameplay logic and modern customization options.  
+Thank you for reviewing our work!
