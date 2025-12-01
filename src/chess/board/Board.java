@@ -2,36 +2,34 @@ package chess.board;
 
 import chess.pieces.*;
 import chess.position.Position;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a chessboard with an 8x8 grid of squares.
- * Handles piece placement, movement, captures, castling, check, checkmate, stalemate, and board display.
+ * Represents an 8x8 chessboard and implements core game rules:
+ * setup, moves, captures, castling, check/checkmate/stalemate, and console display.
+ *
+ * This is your Phase-1 backend board class used by Game (console)
+ * and compatible with your piece classes in chess.pieces.*.
  */
 public class Board {
 
-    /** 8x8 grid representing the chessboard. Null indicates an empty square. */
-    private Piece[][] board = new Piece[8][8];
+    /** 8x8 board. Null = empty square. */
+    private final Piece[][] board = new Piece[8][8];
 
-    /** List of captured white pieces */
-    private List<Piece> capturedWhite = new ArrayList<>();
+    /** Captured pieces (for display). */
+    private final List<Piece> capturedWhite = new ArrayList<>();
+    private final List<Piece> capturedBlack = new ArrayList<>();
 
-    /** List of captured black pieces */
-    private List<Piece> capturedBlack = new ArrayList<>();
-
-    /**
-     * Constructs a new Board and sets up pieces in their initial positions.
-     */
+    /** Constructs a new board in the standard starting position. */
     public Board() {
         setupBoard();
     }
 
-    /**
-     * Initializes the board with all pieces in their standard starting positions.
-     */
+    /** Set pieces in starting position. */
     private void setupBoard() {
-        // Black pieces
+        // Black major pieces (top)
         board[0][0] = new Rook(false, new Position(0, 0));
         board[0][1] = new Knight(false, new Position(0, 1));
         board[0][2] = new Bishop(false, new Position(0, 2));
@@ -40,9 +38,13 @@ public class Board {
         board[0][5] = new Bishop(false, new Position(0, 5));
         board[0][6] = new Knight(false, new Position(0, 6));
         board[0][7] = new Rook(false, new Position(0, 7));
-        for (int i = 0; i < 8; i++) board[1][i] = new Pawn(false, new Position(1, i));
 
-        // White pieces
+        // Black pawns
+        for (int c = 0; c < 8; c++) {
+            board[1][c] = new Pawn(false, new Position(1, c));
+        }
+
+        // White major pieces (bottom)
         board[7][0] = new Rook(true, new Position(7, 0));
         board[7][1] = new Knight(true, new Position(7, 1));
         board[7][2] = new Bishop(true, new Position(7, 2));
@@ -51,57 +53,52 @@ public class Board {
         board[7][5] = new Bishop(true, new Position(7, 5));
         board[7][6] = new Knight(true, new Position(7, 6));
         board[7][7] = new Rook(true, new Position(7, 7));
-        for (int i = 0; i < 8; i++) board[6][i] = new Pawn(true, new Position(6, i));
+
+        // White pawns
+        for (int c = 0; c < 8; c++) {
+            board[6][c] = new Pawn(true, new Position(6, c));
+        }
     }
 
-    /**
-     * Clears the board of all pieces and resets captured piece lists.
-     * Useful for testing or restarting a game.
-     */
+    /** Clears the board and captured lists . */
     public void clear() {
         for (int r = 0; r < 8; r++)
             for (int c = 0; c < 8; c++)
                 board[r][c] = null;
-
         capturedWhite.clear();
         capturedBlack.clear();
     }
 
-    /**
-     * Checks if a given position is within the bounds of the board.
-     *
-     * @param pos Position to check
-     * @return true if the position is valid, false otherwise
-     */
+    /** True if a position is within the 8x8 board. */
     public boolean isInBounds(Position pos) {
-        return pos.getRow() >= 0 && pos.getRow() < 8 && pos.getCol() >= 0 && pos.getCol() < 8;
+        int r = pos.getRow();
+        int c = pos.getCol();
+        return r >= 0 && r < 8 && c >= 0 && c < 8;
     }
 
-    /**
-     * Returns the piece at a given position.
-     * @param pos Position to query
-     * @return Piece at the position, or null if empty
-     */
+    /** Get piece at a Position (or null). */
     public Piece getPiece(Position pos) {
         if (!isInBounds(pos)) return null;
         return board[pos.getRow()][pos.getCol()];
     }
 
     /**
-     * Places a piece at the specified position.
-     * @param pos Position to place the piece
-     * @param piece Piece to place (can be null)
+     * Helper used by GUI: get piece directly by row/col.
      */
+    public Piece getPieceAt(int row, int col) {
+        if (row < 0 || row >= 8 || col < 0 || col >= 8) return null;
+        return board[row][col];
+    }
+
+    /** Put a piece on the board (can be null to clear square). */
     public void setPiece(Position pos, Piece piece) {
         if (!isInBounds(pos)) return;
         board[pos.getRow()][pos.getCol()] = piece;
     }
 
     /**
-     * Moves a piece from one position to another.
-     * Handles captures, castling, and updating piece movement flags.
-     * @param from Starting position
-     * @param to Destination position
+     * Move a piece from one square to another.
+     * Handles captures and castling and updates piece "hasMoved" flags.
      */
     public void movePiece(Position from, Position to) {
         Piece moving = getPiece(from);
@@ -114,25 +111,31 @@ public class Board {
             else capturedBlack.add(target);
         }
 
-        // Update board
+        // Move piece
         board[to.getRow()][to.getCol()] = moving;
         board[from.getRow()][from.getCol()] = null;
         moving.setPosition(to);
 
-        // Mark king or rook as moved
-        if (moving instanceof King) ((King) moving).setHasMoved(true);
-        if (moving instanceof Rook) ((Rook) moving).setHasMoved(true);
+        // Mark king/rook as having moved (for castling rules)
+        if (moving instanceof King) {
+            ((King) moving).setHasMoved(true);
+        }
+        if (moving instanceof Rook) {
+            ((Rook) moving).setHasMoved(true);
+        }
 
-        // Handle castling
+        // Handle castling rook move
         if (moving instanceof King && Math.abs(from.getCol() - to.getCol()) == 2) {
             int row = from.getRow();
-            if (to.getCol() > from.getCol()) { // Kingside
+            if (to.getCol() > from.getCol()) {
+                // Kingside: rook from h-file to f-file
                 Piece rook = getPiece(new Position(row, 7));
                 board[row][5] = rook;
                 board[row][7] = null;
                 rook.setPosition(new Position(row, 5));
                 if (rook instanceof Rook) ((Rook) rook).setHasMoved(true);
-            } else { // Queenside
+            } else {
+                // Queenside: rook from a-file to d-file
                 Piece rook = getPiece(new Position(row, 0));
                 board[row][3] = rook;
                 board[row][0] = null;
@@ -143,153 +146,158 @@ public class Board {
     }
 
     /**
-     * Returns true if the king of the given color is currently in check.
-     * @param white Color of king
-     * @return true if the king is under attack
+     * Returns true if the king of the given color is in check.
+     *
+     * @param white true = white king, false = black king
      */
     public boolean isCheck(boolean white) {
         Position kingPos = findKing(white);
         if (kingPos == null) return false;
 
-        for (Piece[] row : board)
-            for (Piece p : row)
-                if (p != null && p.isWhite() != white && p.canAttackPosition(this, kingPos))
-                    return true;
-
+        for (Piece[] row : board) {
+            for (Piece p : row) {
+                if (p != null && p.isWhite() != white) {
+                    if (p.canAttackPosition(this, kingPos)) return true;
+                }
+            }
+        }
         return false;
     }
 
-    /**
-     * Finds the king's position for the given color.
-     * @param white Color of king
-     * @return Position of the king, or null if not found
-     */
+    /** Find the Position of the given color king. */
     public Position findKing(boolean white) {
-        for (int i = 0; i < 8; i++)
-            for (int j = 0; j < 8; j++) {
-                Piece p = board[i][j];
-                if (p instanceof King && p.isWhite() == white)
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = board[r][c];
+                if (p instanceof King && p.isWhite() == white) {
                     return p.getPosition();
+                }
             }
+        }
         return null;
     }
 
     /**
-     * Simulates a move and checks if it would leave the player's king in check.
-     * @param piece Piece to move
-     * @param to Destination position
-     * @return true if the move would leave the king in check
+     * Simulate a move for a given piece and destination and see
+     * if that would leave its own king in check.
      */
     public boolean wouldBeInCheck(Piece piece, Position to) {
         Position from = piece.getPosition();
-        Piece target = getPiece(to);
+        Piece captured = getPiece(to);
 
-        // Simulate move
+        // Simulate
         board[to.getRow()][to.getCol()] = piece;
         board[from.getRow()][from.getCol()] = null;
         piece.setPosition(to);
 
         boolean check = isCheck(piece.isWhite());
 
-        // Revert move
+        // Undo
         board[from.getRow()][from.getCol()] = piece;
-        board[to.getRow()][to.getCol()] = target;
+        board[to.getRow()][to.getCol()] = captured;
         piece.setPosition(from);
 
         return check;
     }
 
-    /**
-     * Checks if castling kingside is allowed for the given color.
-     * @param white Color to check
-     * @return true if kingside castling is legal
-     */
+    /** True if kingside castling is currently legal for the given color. */
     public boolean canCastleKingside(boolean white) {
         int row = white ? 7 : 0;
         Piece king = board[row][4];
         Piece rook = board[row][7];
+
         if (!(king instanceof King) || !(rook instanceof Rook)) return false;
         if (((King) king).hasMoved() || ((Rook) rook).hasMoved()) return false;
         if (board[row][5] != null || board[row][6] != null) return false;
-        if (isCheck(white) || wouldBeInCheck(king, new Position(row, 5)) || wouldBeInCheck(king, new Position(row, 6)))
+
+        if (isCheck(white)
+                || wouldBeInCheck(king, new Position(row, 5))
+                || wouldBeInCheck(king, new Position(row, 6))) {
             return false;
+        }
         return true;
     }
 
-    /**
-     * Checks if castling queenside is allowed for the given color.
-     * @param white Color to check
-     * @return true if queenside castling is legal
-     */
+    /** True if queenside castling is currently legal for the given color. */
     public boolean canCastleQueenside(boolean white) {
         int row = white ? 7 : 0;
         Piece king = board[row][4];
         Piece rook = board[row][0];
+
         if (!(king instanceof King) || !(rook instanceof Rook)) return false;
         if (((King) king).hasMoved() || ((Rook) rook).hasMoved()) return false;
         if (board[row][1] != null || board[row][2] != null || board[row][3] != null) return false;
-        if (isCheck(white) || wouldBeInCheck(king, new Position(row, 3)) || wouldBeInCheck(king, new Position(row, 2)))
+
+        if (isCheck(white)
+                || wouldBeInCheck(king, new Position(row, 3))
+                || wouldBeInCheck(king, new Position(row, 2))) {
             return false;
+        }
         return true;
     }
 
     /**
-     * Returns true if the given color has at least one legal move available.
-     * @param white Color to check
-     * @return true if at least one valid move exists
+     * True if the given color has at least one legal move.
+     * Used for checkmate / stalemate.
      */
     public boolean hasAnyValidMoves(boolean white) {
-        for (int i = 0; i < 8; i++)
-            for (int j = 0; j < 8; j++) {
-                Piece p = board[i][j];
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = board[r][c];
                 if (p != null && p.isWhite() == white) {
                     for (Position move : p.possibleMoves(this)) {
-                        if (!wouldBeInCheck(p, move)) return true;
+                        if (!wouldBeInCheck(p, move)) {
+                            return true;
+                        }
                     }
                 }
             }
+        }
         return false;
     }
 
-    /**
-     * Returns true if the given color is in checkmate.
-     * @param white Color to check
-     * @return true if checkmate
-     */
+    /** True if color is in checkmate. */
     public boolean isCheckmate(boolean white) {
         return isCheck(white) && !hasAnyValidMoves(white);
     }
 
-    /**
-     * Returns true if the given color is in stalemate.
-     * @param white Color to check
-     * @return true if stalemate
-     */
+    /** True if color is in stalemate. */
     public boolean isStalemate(boolean white) {
         return !isCheck(white) && !hasAnyValidMoves(white);
     }
 
-    /**
-     * Displays the board and captured pieces in the console.
-     */
+    /** Console display for Phase-1 game. */
     public void display() {
         System.out.print("   ");
-        for (char c = 'A'; c <= 'H'; c++) System.out.print(c + "  ");
+        for (char file = 'A'; file <= 'H'; file++) {
+            System.out.print(file + "  ");
+        }
         System.out.println();
-        for (int i = 0; i < 8; i++) {
-            System.out.print(8 - i + " ");
-            for (int j = 0; j < 8; j++) {
-                Piece p = board[i][j];
-                if (p != null) System.out.print(p + " ");
-                else System.out.print((i + j) % 2 == 0 ? "## " : "   ");
+
+        for (int r = 0; r < 8; r++) {
+            System.out.print(8 - r + " ");
+            for (int c = 0; c < 8; c++) {
+                Piece p = board[r][c];
+                if (p != null) {
+                    System.out.print(p + " ");
+                } else {
+                    // mimic "##" pattern for dark squares
+                    System.out.print(((r + c) % 2 == 0) ? "## " : "   ");
+                }
             }
             System.out.println();
         }
+
         System.out.print("White captured: ");
-        for (Piece p : capturedWhite) System.out.print(p + " ");
+        for (Piece p : capturedWhite) {
+            System.out.print(p + " ");
+        }
         System.out.println();
+
         System.out.print("Black captured: ");
-        for (Piece p : capturedBlack) System.out.print(p + " ");
+        for (Piece p : capturedBlack) {
+            System.out.print(p + " ");
+        }
         System.out.println();
     }
 }
