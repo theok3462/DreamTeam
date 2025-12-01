@@ -1,167 +1,172 @@
 package chessgui;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.util.Enumeration;
+import java.net.URL;
+import java.util.List;
 
 /**
- * A panel that displays move history, captured pieces, and provides an Undo feature.
- * <p>
- * Each move is appended to a text area, and captured pieces are displayed
- * as icons (based on the current theme).
+ * Side panel that shows captured pieces and move history.
  */
 public class HistoryPanel extends JPanel {
-    private final GameState state;
-    private final ChessBoardPanel boardPanel;
-    private final JTextArea historyArea = new JTextArea();
-    private final JPanel capturedWhitePanel = new JPanel(new GridLayout(0, 1));
-    private final JPanel capturedBlackPanel = new JPanel(new GridLayout(0, 1));
 
-    /**
-     * Creates a new HistoryPanel associated with a game state and board panel.
-     *
-     * @param state      the current {@link GameState}
-     * @param boardPanel the {@link ChessBoardPanel} for board updates
-     */
-    public HistoryPanel(GameState state, ChessBoardPanel boardPanel) {
+    private GameState state;
+    private SettingsManager settings;
+    private final Runnable undoCallback;
+
+    private final JPanel capturedWhitePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 2));
+    private final JPanel capturedBlackPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 2));
+    private final JTextArea historyArea = new JTextArea(20, 22);
+    private final JLabel statusLabel = new JLabel(" ");
+
+    public HistoryPanel(GameState state,
+                        SettingsManager settings,
+                        Runnable undoCallback) {
         this.state = state;
-        this.boardPanel = boardPanel;
-        setLayout(new BorderLayout());
+        this.settings = settings;
+        this.undoCallback = undoCallback;
+        buildUI();
+        reloadFromState();
+    }
+
+    private void buildUI() {
+        setLayout(new BorderLayout(5, 5));
+        setPreferredSize(new Dimension(260, 500));
+
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+        capturedWhitePanel.setOpaque(false);
+        capturedBlackPanel.setOpaque(false);
+
+        JPanel whiteRow = new JPanel(new BorderLayout());
+        whiteRow.setOpaque(false);
+        whiteRow.add(new JLabel("Captured White:"), BorderLayout.NORTH);
+        whiteRow.add(capturedWhitePanel, BorderLayout.CENTER);
+
+        JPanel blackRow = new JPanel(new BorderLayout());
+        blackRow.setOpaque(false);
+        blackRow.add(new JLabel("Captured Black:"), BorderLayout.NORTH);
+        blackRow.add(capturedBlackPanel, BorderLayout.CENTER);
+
+        infoPanel.add(whiteRow);
+        infoPanel.add(Box.createVerticalStrut(4));
+        infoPanel.add(blackRow);
+        infoPanel.add(Box.createVerticalStrut(4));
+
+        statusLabel.setBorder(new EmptyBorder(4, 0, 0, 0));
+        infoPanel.add(statusLabel);
+
+        add(infoPanel, BorderLayout.NORTH);
 
         historyArea.setEditable(false);
-        JScrollPane historyScroll = new JScrollPane(historyArea);
-        historyScroll.setPreferredSize(new Dimension(280, 300));
-        add(historyScroll, BorderLayout.CENTER);
+        historyArea.setLineWrap(false);
+        JScrollPane scroll = new JScrollPane(historyArea);
+        scroll.setBorder(BorderFactory.createTitledBorder("Move History"));
+        add(scroll, BorderLayout.CENTER);
 
-        JPanel bottom = new JPanel(new GridLayout(3, 1));
-        JPanel topControls = new JPanel();
-        JButton undo = new JButton("Undo");
-        undo.addActionListener(e -> undo());
-        topControls.add(undo);
-        bottom.add(topControls);
-
-        // captured panels
-        JPanel capturedContainer = new JPanel(new GridLayout(1, 2));
-        JScrollPane cw = new JScrollPane(capturedWhitePanel);
-        JScrollPane cb = new JScrollPane(capturedBlackPanel);
-        capturedContainer.add(makeTitledPanel("Captured White (by Black)", cw));
-        capturedContainer.add(makeTitledPanel("Captured Black (by White)", cb));
-        bottom.add(capturedContainer);
-
-        add(bottom, BorderLayout.SOUTH);
-    }
-
-    /**
-     * Creates a titled subpanel for captured pieces.
-     *
-     * @param title panel title
-     * @param comp  the component to display inside
-     * @return the titled panel
-     */
-    private JPanel makeTitledPanel(String title, JComponent comp) {
-        JPanel p = new JPanel(new BorderLayout());
-        p.add(new JLabel(title, SwingConstants.CENTER), BorderLayout.NORTH);
-        p.add(comp, BorderLayout.CENTER);
-        return p;
-    }
-
-    /**
-     * Adds a move entry to the history and updates captured pieces if any.
-     *
-     * @param m the move to add
-     */
-    public void addMove(Move m) {
-        historyArea.append(m.toString() + "\n");
-        if (m.captured != null) {
-            addCaptured(m.captured, m.player == PieceColor.WHITE ? capturedBlackPanel : capturedWhitePanel);
-        }
-    }
-
-    /**
-     * Adds a captured piece to the appropriate captured panel with icon or text fallback.
-     *
-     * @param p      the captured piece
-     * @param panel  the panel to add it to
-     */
-    private void addCaptured(Piece p, JPanel panel) {
-        JLabel lbl = new JLabel();
-
-        try {
-            String theme = state.getCurrentTheme();
-            if (theme == null || theme.isBlank()) theme = "default";
-
-            String basePath = "/chessgui/pieces/" + theme.toLowerCase() + "/";
-            String fileName = p.getColor().name().toLowerCase() + "_" + p.getType().name().toLowerCase() + ".png";
-            java.net.URL res = getClass().getResource(basePath + fileName);
-
-            if (res == null && !theme.equalsIgnoreCase("default")) {
-                res = getClass().getResource("/chessgui/pieces/default/" + fileName);
+        JButton undoButton = new JButton("Undo");
+        undoButton.addActionListener(e -> {
+            if (undoCallback != null) {
+                undoCallback.run();
             }
-
-            if (res != null) {
-                ImageIcon ic = new ImageIcon(res);
-                Image img = ic.getImage().getScaledInstance(28, 28, Image.SCALE_SMOOTH);
-                lbl.setIcon(new ImageIcon(img));
-            } else {
-                lbl.setText(p.getColor() + " " + p.getType());
-                System.err.println("⚠️ Missing captured piece image: " + basePath + fileName);
-            }
-        } catch (Exception ex) {
-            lbl.setText(p.getColor() + " " + p.getType());
-            ex.printStackTrace();
-        }
-
-        panel.add(lbl);
-        revalidate();
-        repaint();
+        });
+        JPanel south = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        south.add(undoButton);
+        add(south, BorderLayout.SOUTH);
     }
 
-    /** Resets the move history and captured pieces list (used for new games). */
-    public void reset() {
-        historyArea.setText("");
+    public void setStateAndSettings(GameState state, SettingsManager settings) {
+        this.state = state;
+        this.settings = settings;
+        reloadFromState();
+    }
+
+    /**
+     * Backwards-compatible clear method so older code (MenuBar, etc.)
+     * that calls historyPanel.clear() still compiles.
+     * This just wipes the UI; New Game typically calls reloadFromState()
+     * right after resetting GameState.
+     */
+    public void clear() {
         capturedWhitePanel.removeAll();
         capturedBlackPanel.removeAll();
-        revalidate();
+        historyArea.setText("");
+        statusLabel.setText(" ");
+        capturedWhitePanel.revalidate();
+        capturedWhitePanel.repaint();
+        capturedBlackPanel.revalidate();
+        capturedBlackPanel.repaint();
         repaint();
     }
 
-    /** Rebuilds move history and captured lists from the current game state. */
+    /** Rebuilds captured pieces and move list from the GameState. */
     public void reloadFromState() {
-        reset();
-        for (Enumeration<Move> e = state.moves.elements(); e.hasMoreElements();) {
-            Move m = e.nextElement();
-            historyArea.append(m.toString() + "\n");
+        capturedWhitePanel.removeAll();
+        capturedBlackPanel.removeAll();
+        historyArea.setText("");
+
+        List<Move> moves = state.getHistory();
+        int moveNumber = 1;
+        for (Move m : moves) {
+            // Captured pieces
             if (m.captured != null) {
-                addCaptured(m.captured, m.player == PieceColor.WHITE ? capturedBlackPanel : capturedWhitePanel);
+                if (m.captured.getColor() == PieceColor.WHITE) {
+                    capturedWhitePanel.add(new JLabel(getPieceIcon(m.captured)));
+                } else {
+                    capturedBlackPanel.add(new JLabel(getPieceIcon(m.captured)));
+                }
             }
+
+            String line = String.format(
+                    "%2d. %5s: %s%n",
+                    moveNumber++,
+                    m.player,
+                    m.toString()
+            );
+            historyArea.append(line);
         }
+
+        PieceColor current = state.getCurrentPlayer();
+        if (state.isGameOver()) {
+            PieceColor winner = state.getWinner();
+            if (winner == null) {
+                statusLabel.setText("Game over: stalemate (draw).");
+            } else {
+                statusLabel.setText("Game over: " + winner + " wins.");
+            }
+        } else if (state.isCheck(current)) {
+            statusLabel.setText(current + " is in check.");
+        } else {
+            statusLabel.setText(current + " to move.");
+        }
+
+        capturedWhitePanel.revalidate();
+        capturedWhitePanel.repaint();
+        capturedBlackPanel.revalidate();
+        capturedBlackPanel.repaint();
+        historyArea.setCaretPosition(historyArea.getDocument().getLength());
     }
 
-    /** Undoes the last move, restoring the board and updating history accordingly. */
-    private void undo() {
-        if (state.moves.isEmpty()) return;
-        Move last = state.moves.pop();
-        state.setPieceAt(last.sx, last.sy, last.moved);
-        state.setPieceAt(last.dx, last.dy, last.captured);
-        state.toggleCurrentPlayer();
-
-        String text = historyArea.getText();
-        int lastLineIndex = text.lastIndexOf("\n", text.length() - 2);
-        if (lastLineIndex >= 0) historyArea.setText(text.substring(0, lastLineIndex + 1));
-        else historyArea.setText("");
-
-        if (last.captured != null) {
-            if (last.player == PieceColor.WHITE) {
-                if (capturedBlackPanel.getComponentCount() > 0)
-                    capturedBlackPanel.remove(capturedBlackPanel.getComponentCount() - 1);
-            } else {
-                if (capturedWhitePanel.getComponentCount() > 0)
-                    capturedWhitePanel.remove(capturedWhitePanel.getComponentCount() - 1);
-            }
+    // Loads a small icon for a captured piece using the current theme.
+    private Icon getPieceIcon(Piece p) {
+        if (p == null) return null;
+        String theme = settings.getPieceTheme();
+        if (theme == null || theme.isEmpty()) {
+            theme = "default";
         }
-
-        revalidate();
-        repaint();
-        boardPanel.reload();
+        String color = (p.getColor() == PieceColor.WHITE) ? "white" : "black";
+        String type = p.getType().name().toLowerCase();
+        String path = "/chessgui/pieces/" + theme + "/" + color + "_" + type + ".png";
+        URL url = getClass().getResource(path);
+        if (url == null) {
+            System.err.println("Captured piece image not found: " + path);
+            return null;
+        }
+        ImageIcon icon = new ImageIcon(url);
+        Image scaled = icon.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        return new ImageIcon(scaled);
     }
 }
