@@ -4,89 +4,77 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * A settings dialog allowing the user to change board color themes, piece styles, and square size.
+ * Simple settings dialog that allows changing:
+ *  - board light/dark colors
+ *  - piece theme ("Classic", "3D")
+ *  - square (tile) size
  */
 public class SettingsWindow extends JDialog {
-    private final SettingsManager settings;
-    private final ChessFrame frame;
 
-    private JComboBox<String> themeCombo;
-    private JComboBox<String> pieceStyleCombo;
-    private JSlider sizeSlider;
-
-    /**
-     * Constructor (called from MenuBar)
-     */
-    public SettingsWindow(ChessFrame frame, SettingsManager settings) {
+    public SettingsWindow(ChessFrame frame) {
         super(frame, "Settings", true);
-        this.settings = settings;
-        this.frame = frame;
-        initUI();
-    }
 
-    /**
-     * Initializes the settings window UI.
-     */
-    private void initUI() {
-        setLayout(new BorderLayout());
-        JPanel panel = new JPanel(new GridLayout(0, 2, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        SettingsManager settings = frame.getSettings();
 
-        // === BOARD COLOR THEME ===
-        panel.add(new JLabel("Board Color Theme:"));
-        String[] themeNames = new String[settings.getThemeCount()];
-        for (int i = 0; i < settings.getThemeCount(); i++) {
-            themeNames[i] = SettingsManager.getThemeName(i);
-        }
-        themeCombo = new JComboBox<>(themeNames);
-        themeCombo.setSelectedIndex(settings.getBoardColorIndex());
-        panel.add(themeCombo);
+        // Piece theme
+        JComboBox<String> themeBox = new JComboBox<>(new String[]{"Classic", "3D"});
+        themeBox.setSelectedItem(settings.getPieceTheme());
 
-        // === PIECE STYLE ===
-        panel.add(new JLabel("Piece Style:"));
-        // ✅ Use styles from SettingsManager directly
-        pieceStyleCombo = new JComboBox<>(settings.getPieceStyles());
-        pieceStyleCombo.setSelectedItem(settings.getPieceStyle());
-        panel.add(pieceStyleCombo);
+        // Board colors
+        JButton lightBtn = new JButton("Light Square Color");
+        JButton darkBtn  = new JButton("Dark Square Color");
 
-        // === SQUARE SIZE ===
-        panel.add(new JLabel("Square Size:"));
-        sizeSlider = new JSlider(40, 120, settings.getSquareSize());
-        sizeSlider.setMajorTickSpacing(20);
-        sizeSlider.setPaintTicks(true);
-        sizeSlider.setPaintLabels(true);
-        panel.add(sizeSlider);
+        lightBtn.setBackground(settings.getLightSquare());
+        darkBtn.setBackground(settings.getDarkSquare());
 
-        add(panel, BorderLayout.CENTER);
-
-        // === BUTTONS ===
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton applyBtn = new JButton("Apply");
-        JButton cancelBtn = new JButton("Cancel");
-
-        buttons.add(applyBtn);
-        buttons.add(cancelBtn);
-        add(buttons, BorderLayout.SOUTH);
-
-        // === Apply button logic ===
-        applyBtn.addActionListener(e -> {
-            applySettings();
-            setVisible(false);
+        lightBtn.addActionListener(e -> {
+            Color chosen = JColorChooser.showDialog(this, "Choose Light Square Color", settings.getLightSquare());
+            if (chosen != null) {
+                settings.setLightSquare(chosen);
+                lightBtn.setBackground(chosen);
+            }
         });
 
-        cancelBtn.addActionListener(e -> setVisible(false));
+        darkBtn.addActionListener(e -> {
+            Color chosen = JColorChooser.showDialog(this, "Choose Dark Square Color", settings.getDarkSquare());
+            if (chosen != null) {
+                settings.setDarkSquare(chosen);
+                darkBtn.setBackground(chosen);
+            }
+        });
+
+        // Square size
+        JSpinner sizeSpinner = new JSpinner(new SpinnerNumberModel(settings.getSquareSize(), 40, 120, 4));
+
+        JPanel form = new JPanel(new GridLayout(0, 1, 8, 8));
+        form.add(new JLabel("Piece Theme:"));
+        form.add(themeBox);
+        form.add(lightBtn);
+        form.add(darkBtn);
+        form.add(new JLabel("Square Size (px):"));
+        form.add(sizeSpinner);
+
+        JButton ok = new JButton("OK");
+        JButton cancel = new JButton("Cancel");
+
+        ok.addActionListener(e -> {
+            settings.setPieceTheme((String) themeBox.getSelectedItem());
+            settings.setSquareSize((Integer) sizeSpinner.getValue());
+            frame.applySettingsChanged();
+            dispose();
+        });
+
+        cancel.addActionListener(e -> dispose());
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttons.add(ok);
+        buttons.add(cancel);
+
+        getContentPane().setLayout(new BorderLayout(8, 8));
+        getContentPane().add(form, BorderLayout.CENTER);
+        getContentPane().add(buttons, BorderLayout.SOUTH);
 
         pack();
         setLocationRelativeTo(frame);
-    }
-
-    /**
-     * Apply changes to settings and refresh the board.
-     */
-    private void applySettings() {
-        settings.setBoardColorIndex(themeCombo.getSelectedIndex());
-        settings.setPieceStyle((String) pieceStyleCombo.getSelectedItem());
-        settings.setSquareSize(sizeSlider.getValue());
-        frame.getBoardPanel().reload(); // refresh the board visuals
     }
 }
