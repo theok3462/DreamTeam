@@ -1,14 +1,28 @@
 🌟 Dream Team — Chess Game GUI (CS 3354 – Phase 3)
 
+Fall 2025 – Final Project Submission
 
 
-Semester: Fall 2025
 
-Team Members: Theo Kliewer, Mario Mondragon, Ikram Yahya
+👥 Team Members:
 
-Course: CS 3354 – Object-Oriented Design
 
-Project: Chess Game — Phase 3
+
+Theo Kliewer
+
+
+
+Mario Mondragon
+
+
+
+Ikram Yahya
+
+
+
+📚 Course: CS 3354 – Object-Oriented Design
+
+🎯 Project: Chess Game – Phase 3 (GUI + Full Game Integration)
 
 
 
@@ -16,57 +30,29 @@ Project: Chess Game — Phase 3
 
 
 
-This project implements a fully interactive Chess Game using Java and Swing.
-
-Phase 3 delivers the complete gameplay experience, including:
+This project delivers a fully interactive Java Swing-based Chess Game that integrates the complete backend logic with a dynamic, user-friendly GUI.
 
 
 
-Backend game logic (moves, captures, check \& checkmate)
+Phase 3 focuses on:
 
 
 
-Interactive GUI board
+✨ Complete gameplay experience
 
+✨ Visual board interaction
 
+✨ Check \& checkmate detection
 
-Move history tracking
+✨ Timers, move history, captured pieces
 
+✨ Custom themes \& colors
 
+✨ Save / Load system
 
-Captured pieces display
+✨ Dark mode
 
-
-
-Undo move
-
-
-
-Player timers
-
-
-
-Dark mode
-
-
-
-Custom board colors and piece themes
-
-
-
-Save \& Load system
-
-
-
-Settings window
-
-
-
-UML class diagram
-
-
-
-Multiple extra credit features
+✨ Extra credit features
 
 
 
@@ -76,97 +62,125 @@ Multiple extra credit features
 
 
 
-Legal movement rules for all pieces
+♟️ Legal piece movement rules
 
 
 
-Move validation
+❌ Illegal move prevention
 
 
 
-Captures
+🎯 Captures + turn switching
 
 
 
-Check \& checkmate detection
+⚠️ Check detection
 
 
 
-Turn switching
+👑 Checkmate detection
 
 
 
-Undo last move
+↩️ Undo last move
 
 
 
-✔️ GUI Features
+✔️ Graphical User Interface
 
 
 
-Click to select piece, click destination
+🖱️ Click-to-select piece
 
 
 
-Highlight selected piece and legal squares
+🎯 Highlight legal squares
 
 
 
-Move history panel
+📜 Move history panel
 
 
 
-Captured pieces display
+🎒 Captured pieces section
 
 
 
-Player timers (Start / Stop / Reset)
+⏱️ Player timers (Start / Stop / Reset)
 
 
 
-Menu bar: New Game, Save, Load, Settings
+🖥️ Menu bar options:
 
 
 
-Dark mode support
+New Game
 
 
 
-✔️ Customization Features
+Save
 
 
 
-Change board light/dark square colors
+Load
 
 
 
-Change piece theme (Default, Vibrant, Ocean)
+Settings
 
 
 
-Scale piece sizes
+\- Full Dark Mode support
 
 
 
-Switch between light mode and dark mode UI
+\- Customization Options
+
+
+
+\- Custom board light/dark square colors
+
+
+
+\- Multiple piece themes:
+
+
+
+Default
+
+
+
+Vibrant
+
+
+
+Ocean
+
+
+
+🔍 Adjustable piece sizes
+
+
+
+⚫/⚪ Dark / Light UI toggle
 
 
 
 🚀 How to Compile \& Run the Chess Game
 
-🖥️ Option 1 — Run Using IntelliJ IDEA (RECOMMENDED)
+🖥️ OPTION 1 — Run Using IntelliJ IDEA (Recommended)
 
 
 
-Open IntelliJ IDEA.
+Open IntelliJ IDEA
 
 
 
-Click File → Open….
+Go to File → Open…
 
 
 
-Select the folder:
+Select your project folder:
 
 
 
@@ -174,11 +188,13 @@ DreamTeam/
 
 
 
-Wait for IntelliJ to finish indexing the project.
+
+
+Wait for IntelliJ to index the project
 
 
 
-In the Project panel, open:
+Open:
 
 
 
@@ -186,31 +202,25 @@ src/chessgui/ChessApp.java
 
 
 
-At the top of that file, find:
+
+
+Click the green ▶ RUN button next to the main method
 
 
 
-public static void main(String\[] args)
+Enjoy the game!
 
 
 
-Click the green ▶ Run button next to it.
+🖥️ OPTION 2 — Run from Windows Terminal
 
 
 
-The Chess Game GUI window will open.
+Open Command Prompt
 
 
 
-🖥️ Option 2 — Run From Command Prompt (Windows)
-
-
-
-Open Command Prompt.
-
-
-
-Go to your project folder:
+Navigate to the project folder:
 
 
 
@@ -218,7 +228,9 @@ cd C:\\Users\\surfaceLaptop4\\OneDrive\\Desktop\\DreamTeam
 
 
 
-Compile all Java source files into the out folder:
+
+
+Compile all source files:
 
 
 
@@ -226,7 +238,9 @@ javac src\\\*\*\\\*.java -d out
 
 
 
-Run the main class:
+
+
+Run the GUI:
 
 
 
@@ -234,49 +248,25 @@ java -cp out chessgui.ChessApp
 
 
 
-The Chess Game GUI window will open.
-
-
-
 📸 Screenshots
 
-1️⃣ New Game Screen
+&nbsp;1️⃣ New Game Screen
 
 
 
-!\[New Game](screenshots/new\_game.png)
+&nbsp;2️⃣ Mid Game
 
 
 
-2️⃣ Mid Game
+&nbsp;3️⃣ Board \& Piece Settings
 
 
 
-!\[Mid Game](screenshots/mid\_game.png)
+&nbsp;4️⃣ Theme Preview
 
 
 
-3️⃣ Board \& Piece Settings
-
-
-
-!\[Board Settings](screenshots/board\_settings.png)
-
-
-
-4️⃣ Theme Preview (Vibrant / Ocean)
-
-
-
-!\[Theme Board](screenshots/theme\_board.png)
-
-
-
-5️⃣ Dark Square Color Picker
-
-
-
-!\[Dark Picker](screenshots/dark\_square\_picker.png)
+&nbsp;5️⃣ Dark Square Color Picker
 
 
 
@@ -284,31 +274,31 @@ The Chess Game GUI window will open.
 
 
 
-The UML diagram includes:
+The UML diagram illustrates:
 
 
 
-Piece inheritance
+🧬 Piece inheritance hierarchy
 
 
 
-Board–Piece composition
+📦 Composition: Board → Pieces
 
 
 
-GameState–Board relationship
+🔁 GameState ↔ Board interaction
 
 
 
-GUI layout (ChessFrame with panels)
+🖼️ GUI architecture (ChessFrame → Panels)
 
 
 
-Theme / Settings relationship
+🎨 Theme \& Settings system
 
 
 
-Diagram image file in repo:
+📁 Located at:
 
 
 
@@ -316,113 +306,77 @@ uml/phase3\_uml.png
 
 
 
-✔️ Extra Credit Features Implemented
+🏆 Extra Credit Features Completed
 
 Extra Feature	Status
 
-Dark Mode	✅
+\- Dark Mode	✅
 
-Custom Board Colors	✅
+\- Custom Board Colors	✅
 
-Multiple Piece Themes	✅
+\- Multiple Piece Themes	✅
 
-Timers	✅
+\- Timers	✅
 
-Move History	✅
+\- Move History	✅
 
-Captured Pieces Panel	✅
+\- Captured Pieces	✅
 
-Save \& Load	✅
+\- Save \& Load	✅
 
-Settings Window	✅
+\- Settings Window	✅
 
-Undo Move	✅
+\- Undo Move	✅
 
 📂 Project Structure
 
-
-
 src/
 
+&nbsp;├─ chess/        ← Backend game logic
 
+&nbsp;├─ chessgui/     ← GUI components
 
-chess/ – backend logic (board, pieces, game rules)
+&nbsp;├─ pieces/       ← Piece images (themes)
 
+&nbsp;├─ screenshots/  ← README images
 
-
-chessgui/ – GUI logic (windows, panels, timers, history)
-
-
-
-screenshots/ – images used in README
-
-
-
-new\_game.png
+&nbsp;└─ uml/          ← UML diagrams
 
 
 
-mid\_game.png
+🧑‍🏫 Course Requirements Completed
 
 
 
-board\_settings.png
+✔ Backend logic connected to GUI
 
 
 
-theme\_board.png
+✔ Check \& checkmate detection
 
 
 
-dark\_square\_picker.png
+✔ GUI board with full interaction
 
 
 
-uml/ – UML diagram
+✔ Extra credit features implemented
 
 
 
-phase3\_uml.png
+✔ UML diagram included
 
 
 
-README.md – this document
+✔ Clean repository structure
 
 
 
-👨‍🏫 Course Requirements Covered
+✔ Detailed README
 
 
 
-Backend + GUI integrated
-
-
-
-Valid move handling and rule enforcement
-
-
-
-Check and checkmate detection
-
-
-
-GUI supports gameplay, history, timers, and settings
-
-
-
-UML class diagram included
-
-
-
-Multiple commits with descriptive messages
-
-
-
-README with screenshots, instructions, and features
-
-
-
-Ready for in-class presentation
+✔ Clean, descriptive commits
 
 
 
@@ -430,9 +384,11 @@ Ready for in-class presentation
 
 
 
-This project combines a complete chess rules engine with a Java Swing graphical user interface to create a polished, fully playable chess game with several customization and extra-credit features.
+This project delivers a polished full chess game built entirely in Java using Swing.
+
+The game includes dynamic visuals, real-time logic, customization features, and full gameplay mechanics.
 
 
 
-Enjoy the game! ♟️
+Enjoy playing! 
 
