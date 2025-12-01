@@ -1,78 +1,108 @@
 package chessgui;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.io.File;
+import java.awt.*;
 
 /**
- * Menu bar with New, Save, Load, Settings and Exit.
+ * Main menu bar for the Chess GUI.
+ *
+ * - Game → New Game, Exit
+ * - Help → About
+ *
+ * It resets GameState, clears history, refreshes the board and timer.
  */
 public class MenuBar extends JMenuBar {
-    public MenuBar(ChessFrame frame) {
-        JMenu game = new JMenu("Game");
 
-        JMenuItem newItem = new JMenuItem(new AbstractAction("New Game") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                frame.newGame();
+    private final GameState state;
+    private final ChessBoardPanel boardPanel;
+    private final HistoryPanel historyPanel;
+    private final TimerPanel timerPanel;
+    private final JFrame owner;
+
+    public MenuBar(GameState state,
+                   ChessBoardPanel boardPanel,
+                   HistoryPanel historyPanel,
+                   TimerPanel timerPanel,
+                   JFrame owner) {
+        this.state = state;
+        this.boardPanel = boardPanel;
+        this.historyPanel = historyPanel;
+        this.timerPanel = timerPanel;
+        this.owner = owner;
+
+        buildMenus();
+    }
+
+    private void buildMenus() {
+        add(createGameMenu());
+        add(createHelpMenu());
+    }
+
+    private JMenu createGameMenu() {
+        JMenu gameMenu = new JMenu("Game");
+
+        JMenuItem newGameItem = new JMenuItem("New Game");
+        newGameItem.addActionListener(e -> newGame());
+        gameMenu.add(newGameItem);
+
+        gameMenu.addSeparator();
+
+        JMenuItem exitItem = new JMenuItem("Exit");
+        exitItem.addActionListener(e -> System.exit(0));
+        gameMenu.add(exitItem);
+
+        return gameMenu;
+    }
+
+    private JMenu createHelpMenu() {
+        JMenu helpMenu = new JMenu("Help");
+
+        JMenuItem aboutItem = new JMenuItem("About");
+        aboutItem.addActionListener(e -> showAboutDialog());
+        helpMenu.add(aboutItem);
+
+        return helpMenu;
+    }
+
+    private void newGame() {
+        int result = JOptionPane.showConfirmDialog(
+                owner,
+                "Start a new game?\nCurrent game will be lost.",
+                "New Game",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (result == JOptionPane.YES_OPTION) {
+            state.reset();
+            if (historyPanel != null) {
+                historyPanel.clear();
             }
-        });
-
-        JMenuItem saveItem = new JMenuItem(new AbstractAction("Save Game") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fc = new JFileChooser();
-                if (fc.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
-                    File f = fc.getSelectedFile();
-                    try {
-                        frame.saveGame(f);
-                        JOptionPane.showMessageDialog(frame, "Saved successfully.");
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(frame, "Save failed: " + ex.getMessage());
-                    }
-                }
+            if (boardPanel != null) {
+                boardPanel.clearSelection();
+                boardPanel.reload();
             }
-        });
-
-        JMenuItem loadItem = new JMenuItem(new AbstractAction("Load Game") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fc = new JFileChooser();
-                if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-                    File f = fc.getSelectedFile();
-                    try {
-                        frame.loadGame(f);
-                        JOptionPane.showMessageDialog(frame, "Loaded successfully.");
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(frame, "Load failed: " + ex.getMessage());
-                    }
-                }
+            if (timerPanel != null) {
+                timerPanel.reset();
             }
-        });
+        }
+    }
 
-        JMenuItem settingsItem = new JMenuItem(new AbstractAction("Settings") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                SettingsWindow w = new SettingsWindow(frame, frame.getSettings());
-                w.setVisible(true);
-            }
-        });
-
-        JMenuItem exitItem = new JMenuItem(new AbstractAction("Exit") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.exit(0);
-            }
-        });
-
-        game.add(newItem);
-        game.add(saveItem);
-        game.add(loadItem);
-        game.addSeparator();
-        game.add(settingsItem);
-        game.addSeparator();
-        game.add(exitItem);
-
-        add(game);
+    private void showAboutDialog() {
+        String msg = """
+                Chess Game GUI (Phase 3)
+                
+                - Two-player chess with full move validation
+                - Check / checkmate detection
+                - Move history + undo
+                - Player timers
+                
+                Developed as part of the course project.
+                """;
+        JOptionPane.showMessageDialog(
+                owner,
+                msg,
+                "About",
+                JOptionPane.INFORMATION_MESSAGE
+        );
     }
 }
