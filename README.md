@@ -32,7 +32,7 @@ This phase includes:
 - Save & Load  
 - Settings window  
 - UML class diagram  
-- Extra credit features
+- Extra credit features listed below
 
 ---
 
@@ -156,17 +156,17 @@ uml/phase3_uml.png
 
 # **Extra Credit Features Completed**
 
-| Feature                       | Status |
-|-------------------------------|--------|
-| Dark mode                     | Yes    |
-| Custom board colors           | Yes    |
-| Multiple piece themes         | Yes    |
-| Player timers                 | Yes    |
-| Move history                  | Yes    |
-| Captured pieces panel         | Yes    |
-| Save & Load                   | Yes    |
-| Settings window               | Yes    |
-| Undo move                     | Yes    |
+| Feature                      
+|-------------------------------
+| Dark mode                     
+| Custom board colors          
+| Multiple piece themes        
+| Player timers                
+| Move history               
+| Captured pieces panel        
+| Save & Load                
+| Settings window               
+| Undo move                     
 
 ---
 
@@ -177,7 +177,7 @@ src/
  ├─ chess/        (Backend logic)
  ├─ chessgui/     (GUI components)
  ├─ pieces/        (Piece images by theme)
- ├─ screenshots/   (README screenshots)
+ ├─ README.md/   (README plus the screenshots)
  └─ uml/           (UML diagrams)
 ```
 
@@ -193,7 +193,7 @@ src/
 - Full UML diagram  
 - Clean and organized repository  
 - Detailed README  
-- Presentation-friendly implementation  
+
 
 ---
 
