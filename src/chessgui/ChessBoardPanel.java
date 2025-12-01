@@ -2,285 +2,416 @@ package chessgui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.*;
-import java.awt.event.*;
-import java.io.IOException;
-import java.net.URL;
-import java.util.function.Consumer;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
- * Main chessboard panel with:
- * - Drag and drop
- * - Click-to-move
- * - Color theme + piece style + resizing
- * - Supports three piece styles: default, vibrant, ocean
+ * Central board component: draws the 8x8 board and pieces, handles
+ * both click-and-move and drag-and-drop, and talks to GameState.
+ *
+ * In this version the BOARD itself fills the whole panel area:
+ * - tiles are stretched to cover the full width/height (no big border),
+ * - the "Square / Piece Size" spinner controls how big pieces are
+ *   inside each tile (not the physical board size).
  */
 public class ChessBoardPanel extends JPanel {
-    private final GameState state;
-    private final SettingsManager settings;
-    private final Consumer<PieceColor> kingCapturedCallback;
-    private final Consumer<Move> moveCallback;
 
+    private GameState state;
+    private SettingsManager settings;
+    private final HistoryPanel historyPanel;
+
+    // selection / dragging
     private int selectedRow = -1, selectedCol = -1;
-    private JPanel grid;
+    private boolean dragging = false;
+    private int dragRow = -1, dragCol = -1;
+    private int dragOffsetX, dragOffsetY;
+    private int dragX, dragY;
 
-    public ChessBoardPanel(GameState state, SettingsManager settings,
-                           Consumer<PieceColor> kingCapturedCallback,
-                           Consumer<Move> moveCallback) {
+    // optional callback for game-over handling (set by ChessFrame)
+    private Runnable gameOverHandler;
+
+    public ChessBoardPanel(GameState state,
+                           SettingsManager settings,
+                           HistoryPanel historyPanel) {
         this.state = state;
         this.settings = settings;
-        this.kingCapturedCallback = kingCapturedCallback;
-        this.moveCallback = moveCallback;
+        this.historyPanel = historyPanel;
 
-        setLayout(new BorderLayout());
+        setOpaque(true);
 
-        // Toolbar for board color settings
-        JToolBar toolbar = new JToolBar();
-        toolbar.setFloatable(false);
+        BoardMouseAdapter adapter = new BoardMouseAdapter();
+        addMouseListener(adapter);
+        addMouseMotionListener(adapter);
 
-        JButton colorSettingsBtn = new JButton("🎨 Board Colors");
-        colorSettingsBtn.addActionListener(e -> openColorSettings());
-        toolbar.add(colorSettingsBtn);
-
-        add(toolbar, BorderLayout.NORTH);
-
-        grid = new JPanel();
-        add(grid, BorderLayout.CENTER);
-
-        reload();
+        updatePreferredSize();
     }
 
-    /** Opens color selection dialog */
-    private void openColorSettings() {
-        Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
-        BoardColorSettingsDialog dialog = new BoardColorSettingsDialog(parentFrame, settings);
-
-        // ✅ When user applies new settings, immediately update the board
-        dialog.setApplyCallback(() -> {
-            reload();
-            repaint();
-        });
-
-        dialog.setVisible(true);
-    }
-
-    /** Rebuild the board completely with new theme and colors */
-    public void reload() {
-        grid.removeAll();
-        int size = settings.getSquareSize();
-        grid.setLayout(new GridLayout(8, 8));
-
-        // Remember the current piece style in GameState
-        state.setCurrentTheme(settings.getPieceStyle());
-
-        for (int r = 0; r < 8; r++) {
-            for (int c = 0; c < 8; c++) {
-                grid.add(new Square(r, c, size));
-            }
-        }
-
-        grid.revalidate();
-        grid.repaint();
+    /** Allow ChessFrame to swap in a loaded state & settings. */
+    public void setStateAndSettings(GameState state, SettingsManager settings) {
+        this.state = state;
+        this.settings = settings;
+        clearSelection();
+        updatePreferredSize();
         repaint();
     }
 
-    /** Called externally to refresh */
-    public void refreshBoard() {
-        reload();
+    /** Called when theme / piece size changed. */
+    public void reload() {
+        updatePreferredSize();
+        revalidate();
+        repaint();
     }
 
-    /** Inner class for each square */
-    private class Square extends JComponent {
-        final int r, c, size;
+    public void clearSelection() {
+        selectedRow = selectedCol = -1;
+        dragging = false;
+        repaint();
+    }
 
-        Square(int r, int c, int size) {
-            this.r = r;
-            this.c = c;
-            this.size = size;
-            setPreferredSize(new Dimension(size, size));
-            enableEvents(AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK);
+    public void setGameOverHandler(Runnable r) {
+        this.gameOverHandler = r;
+    }
 
-            // Drag and drop handling
-            setTransferHandler(new TransferHandler("text") {
-                @Override
-                public int getSourceActions(JComponent comp) {
-                    return TransferHandler.MOVE;
+    /**
+     * Preferred size for layout when window is not maximised.
+     * We keep this constant so the spinner changes **piece size**,
+     * not the physical board size. The board will stretch to fill
+     * whatever space it gets.
+     */
+    private void updatePreferredSize() {
+        int base = 8 * 64; // 8x8 board, 64px tiles by default
+        setPreferredSize(new Dimension(base, base));
+    }
+
+    /** Current tile width based on panel size. */
+    private int getTileWidth() {
+        int w = getWidth();
+        return (w <= 0) ? 64 : Math.max(1, w / 8);
+    }
+
+    /** Current tile height based on panel size. */
+    private int getTileHeight() {
+        int h = getHeight();
+        return (h <= 0) ? 64 : Math.max(1, h / 8);
+    }
+
+    /** Converts mouse coordinates to a board square, or (-1,-1) if outside board. */
+    private Point mouseToBoardSquare(int mouseX, int mouseY) {
+        int tileW = getTileWidth();
+        int tileH = getTileHeight();
+        int boardW = 8 * tileW;
+        int boardH = 8 * tileH;
+
+        if (mouseX < 0 || mouseY < 0 ||
+                mouseX >= boardW || mouseY >= boardH) {
+            return new Point(-1, -1);
+        }
+
+        int col = mouseX / tileW;
+        int row = mouseY / tileH;
+        return new Point(col, row);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (state == null || settings == null) return;
+
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int tileW = getTileWidth();
+        int tileH = getTileHeight();
+
+        // Fill whole panel with dark square color.
+        g2.setColor(settings.getDarkColor());
+        g2.fillRect(0, 0, getWidth(), getHeight());
+
+        // Draw board, using the entire panel area.
+        Color light = settings.getLightColor();
+        Color dark = settings.getDarkColor();
+
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                boolean isLight = ((row + col) % 2 == 0);
+                g2.setColor(isLight ? light : dark);
+                int x = col * tileW;
+                int y = row * tileH;
+                g2.fillRect(x, y, tileW, tileH);
+            }
+        }
+
+        // Highlight selected square
+        if (selectedRow >= 0 && selectedCol >= 0) {
+            g2.setColor(new Color(0, 255, 0, 120));
+            g2.fillRect(selectedCol * tileW, selectedRow * tileH, tileW, tileH);
+        }
+
+        // Highlight last move (if any)
+        if (!state.getHistory().isEmpty()) {
+            Move last = state.getHistory().get(state.getHistory().size() - 1);
+            g2.setColor(new Color(255, 255, 0, 90));
+            g2.fillRect(last.sy * tileW, last.sx * tileH, tileW, tileH);
+            g2.fillRect(last.dy * tileW, last.dx * tileH, tileW, tileH);
+        }
+
+        // Piece size = spinner value, capped so it fits inside the square.
+        int pieceSizeSetting = settings.getSquareSize(); // interpreted as piece size
+        int maxTile = Math.min(tileW, tileH);
+        int drawSize = Math.min(pieceSizeSetting, maxTile);
+
+        // Draw pieces
+        String theme = state.getCurrentTheme();
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                Piece p = state.getPiece(row, col);
+                if (p == null) continue;
+
+                // If dragging this piece, don't draw at its original square.
+                if (dragging && row == dragRow && col == dragCol) continue;
+
+                int squareX = col * tileW;
+                int squareY = row * tileH;
+
+                // Center the piece within the square
+                int px = squareX + (tileW - drawSize) / 2;
+                int py = squareY + (tileH - drawSize) / 2;
+
+                p.draw(g2, px, py, drawSize, theme);
+            }
+        }
+
+        // Draw dragged piece on top if any
+        if (dragging && dragRow >= 0 && dragCol >= 0) {
+            Piece p = state.getPiece(dragRow, dragCol);
+            if (p != null) {
+                p.draw(g2, dragX - dragOffsetX, dragY - dragOffsetY,
+                        drawSize, state.getCurrentTheme());
+            }
+        }
+
+        g2.dispose();
+    }
+
+    // ==== Input handling ========
+
+    private class BoardMouseAdapter extends MouseAdapter {
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (state == null || state.isGameOver()) return;
+
+            Point sq = mouseToBoardSquare(e.getX(), e.getY());
+            int col = sq.x;
+            int row = sq.y;
+            if (!inBounds(row, col)) return;
+
+            Piece clicked = state.getPiece(row, col);
+
+            // No selection yet select own piece if correct color
+            if (selectedRow < 0 || selectedCol < 0) {
+                if (clicked != null && clicked.getColor() == state.getCurrentPlayer()) {
+                    selectedRow = row;
+                    selectedCol = col;
+                    repaint();
+                } else if (clicked != null) {
+                    warnWrongTurn();
                 }
+                return;
+            }
 
-                @Override
-                protected Transferable createTransferable(JComponent comp) {
-                    Piece p = state.getPieceAt(r, c);
-                    if (p == null || p.getColor() != state.getCurrentPlayer()) return null;
-                    return new StringSelection(r + "," + c);
-                }
+            // There is already a selected piece
+            if (clicked != null &&
+                    clicked.getColor() == state.getCurrentPlayer() &&
+                    (row != selectedRow || col != selectedCol)) {
+                // Change selection to a different own piece (no move attempt)
+                selectedRow = row;
+                selectedCol = col;
+                repaint();
+                return;
+            }
 
-                @Override
-                public boolean canImport(TransferSupport support) {
-                    return support.isDataFlavorSupported(DataFlavor.stringFlavor);
-                }
-
-                @Override
-                public boolean importData(TransferSupport support) {
-                    if (!canImport(support)) return false;
-                    try {
-                        String s = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
-                        String[] parts = s.split(",");
-                        if (parts.length != 2) return false;
-                        int sx = Integer.parseInt(parts[0]);
-                        int sy = Integer.parseInt(parts[1]);
-                        SwingUtilities.invokeLater(() -> doMove(sx, sy, r, c));
-                        return true;
-                    } catch (UnsupportedFlavorException | IOException ex) {
-                        ex.printStackTrace();
-                        return false;
-                    }
-                }
-            });
-
-            // ✅ Click-to-move logic
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    if (!SwingUtilities.isLeftMouseButton(e)) return;
-
-                    Piece clickedPiece = state.getPieceAt(r, c);
-
-                    if (selectedRow == -1 && clickedPiece != null &&
-                            clickedPiece.getColor() == state.getCurrentPlayer()) {
-                        selectedRow = r;
-                        selectedCol = c;
-                        repaint();
-                        return;
-                    }
-
-                    if (selectedRow == r && selectedCol == c) {
-                        clearSelection();
-                        return;
-                    }
-
-                    if (selectedRow != -1) {
-                        doMove(selectedRow, selectedCol, r, c);
-                    }
-                }
-            });
-
-            addMouseMotionListener(new MouseMotionAdapter() {
-                @Override
-                public void mouseDragged(MouseEvent e) {
-                    Piece p = state.getPieceAt(r, c);
-                    if (p != null && p.getColor() == state.getCurrentPlayer()) {
-                        TransferHandler th = getTransferHandler();
-                        if (th != null) th.exportAsDrag(Square.this, e, TransferHandler.MOVE);
-                    }
-                }
-            });
+            // Otherwise, try click to move from selected square to this square
+            attemptMove(selectedRow, selectedCol, row, col);
         }
 
         @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g.create();
+        public void mouseDragged(MouseEvent e) {
+            if (state == null || state.isGameOver()) return;
 
-            boolean light = ((r + c) % 2 == 0);
-            g2.setColor(light ? settings.getLightColor() : settings.getDarkColor());
-            g2.fillRect(0, 0, getWidth(), getHeight());
-
-            if (selectedRow == r && selectedCol == c) {
-                g2.setColor(new Color(255, 255, 0, 100));
-                g2.fillRect(0, 0, getWidth(), getHeight());
-            }
-
-            Piece p = state.getPieceAt(r, c);
-            if (p != null) {
-                ImageIcon icon = loadIcon(p, state.getCurrentTheme(),
-                        settings.getSquareSize() - 8, settings.getSquareSize() - 8);
-
-                if (icon != null) {
-                    int x = (getWidth() - icon.getIconWidth()) / 2;
-                    int y = (getHeight() - icon.getIconHeight()) / 2;
-                    icon.paintIcon(this, g2, x, y);
+            if (!dragging) {
+                // Start drag if there is a selected piece and we begin moving
+                if (selectedRow >= 0 && selectedCol >= 0) {
+                    Piece p = state.getPiece(selectedRow, selectedCol);
+                    if (p != null && p.getColor() == state.getCurrentPlayer()) {
+                        startDrag(selectedRow, selectedCol, e.getX(), e.getY());
+                    }
                 }
             }
 
-            g2.setColor(Color.DARK_GRAY);
-            g2.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
-            g2.dispose();
+            if (dragging) {
+                dragX = e.getX();
+                dragY = e.getY();
+                repaint();
+            }
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            if (!dragging || state == null || state.isGameOver()) {
+                dragging = false;
+                return;
+            }
+
+            dragging = false;
+
+            Point sq = mouseToBoardSquare(e.getX(), e.getY());
+            int col = sq.x;
+            int row = sq.y;
+
+            if (!inBounds(row, col)) {
+                // drop off board -> cancel drag but keep selection
+                repaint();
+                return;
+            }
+
+            attemptMove(dragRow, dragCol, row, col);
+        }
+
+        private void startDrag(int row, int col, int mouseX, int mouseY) {
+            dragging = true;
+            dragRow = row;
+            dragCol = col;
+
+            int tileW = getTileWidth();
+            int tileH = getTileHeight();
+            int pieceSizeSetting = settings.getSquareSize();
+            int maxTile = Math.min(tileW, tileH);
+            int drawSize = Math.min(pieceSizeSetting, maxTile);
+
+            int squareX = col * tileW;
+            int squareY = row * tileH;
+            int px = squareX + (tileW - drawSize) / 2;
+            int py = squareY + (tileH - drawSize) / 2;
+
+            dragOffsetX = mouseX - px;
+            dragOffsetY = mouseY - py;
+            dragX = mouseX;
+            dragY = mouseY;
         }
     }
 
-    /** ✅ Loads icons for each style, defaults safely */
-    private ImageIcon loadIcon(Piece p, String style, int w, int h) {
-        try {
-            String basePath;
-
-            // Choose folder depending on selected style
-            switch (style == null ? "default" : style.toLowerCase()) {
-                case "vibrant":
-                    basePath = "/chessgui/pieces/vibrant/";
-                    break;
-                case "ocean":
-                    basePath = "/chessgui/pieces/ocean/";
-                    break;
-                default:
-                    basePath = "/chessgui/pieces/default/";
-                    break;
-            }
-
-            String fileName = p.getColor().name().toLowerCase() + "_" +
-                    p.getType().name().toLowerCase() + ".png";
-            URL res = getClass().getResource(basePath + fileName);
-
-            if (res == null && !basePath.contains("default")) {
-                res = getClass().getResource("/chessgui/pieces/default/" + fileName);
-            }
-
-            if (res == null) {
-                System.err.println("⚠️ Missing image: " + basePath + fileName);
-                return null;
-            }
-
-            ImageIcon ic = new ImageIcon(res);
-            Image scaled = ic.getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH);
-            return new ImageIcon(scaled);
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return null;
-        }
+    private boolean inBounds(int row, int col) {
+        return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
 
-    /** Perform a move */
-    private void doMove(int sx, int sy, int dx, int dy) {
-        if (sx < 0 || sy < 0 || dx < 0 || dy < 0) return;
+    // ==== Move / promotion / game over logic ====
 
-        Piece mover = state.getPieceAt(sx, sy);
-        if (mover == null || mover.getColor() != state.getCurrentPlayer()) return;
+    private void attemptMove(int sr, int sc, int dr, int dc) {
+        if (!inBounds(sr, sc) || !inBounds(dr, dc)) return;
+        if (sr == dr && sc == dc) {
+            // same square: keep selection as-is
+            selectedRow = sr;
+            selectedCol = sc;
+            repaint();
+            return;
+        }
 
-        Piece target = state.getPieceAt(dx, dy);
-        if (target != null && target.getColor() == mover.getColor()) {
-            JOptionPane.showMessageDialog(this, "Cannot capture your own piece.");
+        Piece moving = state.getPiece(sr, sc);
+        if (moving == null) {
             clearSelection();
             return;
         }
 
-        state.setPieceAt(dx, dy, mover);
-        state.setPieceAt(sx, sy, null);
-        Move move = new Move(sx, sy, dx, dy, mover, target, state.getCurrentPlayer());
-        state.moves.push(move);
-        moveCallback.accept(move);
-
-        if (target != null && target.getType() == PieceType.KING) {
-            kingCapturedCallback.accept(mover.getColor());
+        // Enforce turn here so we can show a clear message.
+        if (moving.getColor() != state.getCurrentPlayer()) {
+            warnWrongTurn();
+            clearSelection();
+            return;
         }
 
-        state.toggleCurrentPlayer();
-        clearSelection();
-        reload();
+        boolean success;
+        // Promotion case?
+        if (moving.getType() == PieceType.PAWN &&
+                ((dr == 0 && moving.getColor() == PieceColor.WHITE) ||
+                        (dr == 7 && moving.getColor() == PieceColor.BLACK))) {
+
+            PieceType promoteTo = askPromotionPiece(moving.getColor());
+            if (promoteTo == null) {
+                // user cancelled promotion -> cancel move
+                clearSelection();
+                return;
+            }
+            success = state.makeMove(sr, sc, dr, dc, promoteTo);
+        } else {
+            success = state.makeMove(sr, sc, dr, dc);
+        }
+
+        if (!success) {
+            warnInvalidMove();
+            // keep the piece selected so user can try a different target
+            selectedRow = sr;
+            selectedCol = sc;
+        } else {
+            // move accepted
+            selectedRow = selectedCol = -1;
+            historyPanel.reloadFromState();
+            repaint();
+
+            // Check for game over
+            if (state.isGameOver() && gameOverHandler != null) {
+                // Let the frame show the restart / exit dialog
+                SwingUtilities.invokeLater(gameOverHandler);
+            }
+        }
     }
 
-    private void clearSelection() {
-        selectedRow = -1;
-        selectedCol = -1;
-        repaint();
+    private void warnWrongTurn() {
+        String who = (state.getCurrentPlayer() == PieceColor.WHITE) ? "White" : "Black";
+        JOptionPane.showMessageDialog(
+                this,
+                "It is " + who + "'s turn.",
+                "Wrong Player",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
+    private void warnInvalidMove() {
+        String who = (state.getCurrentPlayer() == PieceColor.WHITE) ? "White" : "Black";
+        JOptionPane.showMessageDialog(
+                this,
+                "Invalid move.\nIt is " + who + " to move.",
+                "Invalid Move",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
+    /**
+     * Dialog for pawn promotion.
+     *
+     * @return chosen PieceType, or null if user cancels.
+     */
+    private PieceType askPromotionPiece(PieceColor color) {
+        String side = (color == PieceColor.WHITE) ? "White" : "Black";
+        String[] options = {"Queen", "Rook", "Bishop", "Knight"};
+        int res = JOptionPane.showOptionDialog(
+                this,
+                side + " pawn promotion: choose piece:",
+                "Pawn Promotion",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+
+        return switch (res) {
+            case 1 -> PieceType.ROOK;
+            case 2 -> PieceType.BISHOP;
+            case 3 -> PieceType.KNIGHT;
+            case 0 -> PieceType.QUEEN;
+            default -> null; // user closed dialog
+        };
     }
 }
