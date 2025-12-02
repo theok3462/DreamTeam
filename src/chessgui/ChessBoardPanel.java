@@ -381,7 +381,7 @@ public class ChessBoardPanel extends JPanel {
         String who = (state.getCurrentPlayer() == PieceColor.WHITE) ? "White" : "Black";
         JOptionPane.showMessageDialog(
                 this,
-                "Invalid move.\nIt is " + who + " to move.",
+                "Invalid move.",
                 "Invalid Move",
                 JOptionPane.WARNING_MESSAGE
         );
