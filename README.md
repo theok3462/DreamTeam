@@ -200,4 +200,4 @@ src/
 # **Final Notes**
 
 This project provides a complete and fully functional **Java Swing Chess Game** with advanced gameplay logic and modern customization options.  
-Thank you for reviewing our work!
+
