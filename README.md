@@ -32,7 +32,7 @@ This phase includes:
 - Save & Load  
 - Settings window  
 - UML class diagram  
-- Extra credit features listed below
+
 
 ---
 
