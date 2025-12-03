@@ -200,7 +200,6 @@ src/
 # **Description of Extra Credit Features**
 
 - AI Opponent: We added a basic computer-controlled opponent that plays as Black and automatically responds after each human move. The AI generates all legal moves available and selects one to play, allowing the user to play a full game against the computer. (ChessAppVsAI.java)
-- Online Multiplayer Mode:
 
 ---
 
