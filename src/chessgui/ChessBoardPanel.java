@@ -1,4 +1,3 @@
-```java
 package chessgui;
 
 import javax.swing.*;
@@ -427,4 +426,3 @@ public class ChessBoardPanel extends JPanel {
         };
     }
 }
-```
