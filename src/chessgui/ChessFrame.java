@@ -19,8 +19,22 @@ public class ChessFrame extends JFrame {
     private HistoryPanel historyPanel;
     private TimerPanel timerPanel;
 
+    private boolean vsAI = false;
+    private PieceColor aiColor = PieceColor.BLACK;
+    private AIPlayer aiPlayer;
+
     public ChessFrame() {
+        this(false, PieceColor.BLACK);
+    }
+
+    public ChessFrame(boolean vsAI, PieceColor aiColor) {
         super("Chess Game");
+
+        this.vsAI = vsAI;
+        this.aiColor = (aiColor != null ? aiColor : PieceColor.BLACK);
+        if (vsAI) {
+            this.aiPlayer = new AIPlayer(this.aiColor);
+        }
 
         this.state = new GameState();
         this.settings = new SettingsManager();
@@ -35,6 +49,7 @@ public class ChessFrame extends JFrame {
         // Let the board notify us on game over so we can offer
         // "new game / exit" using the full reset logic.
         this.boardPanel.setGameOverHandler(this::handleGameOverFromBoard);
+        this.boardPanel.setAfterHumanMove(this::handleAfterHumanMove);
 
         setLayout(new BorderLayout(5, 5));
         ((JComponent) getContentPane()).setBorder(
@@ -172,6 +187,24 @@ public class ChessFrame extends JFrame {
             dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
         }
         // Cancel -> do nothing, board remains in final position.
+    }
+
+    private void handleAfterHumanMove() {
+        if (!vsAI || aiPlayer == null) return;
+        if (state.isGameOver()) return;
+        if (state.getCurrentPlayer() != aiColor) return;
+
+        boolean moved = aiPlayer.makeAIMove(state);
+        if (moved) {
+            historyPanel.reloadFromState();
+            boardPanel.clearSelection();
+            boardPanel.reload();
+            timerPanel.repaint();
+
+            if (state.isGameOver()) {
+                handleGameOverFromBoard();
+            }
+        }
     }
 
     /**
