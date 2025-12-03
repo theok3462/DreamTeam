@@ -1,3 +1,4 @@
+```java
 package chessgui;
 
 import javax.swing.*;
@@ -30,6 +31,9 @@ public class ChessBoardPanel extends JPanel {
     // optional callback for game-over handling (set by ChessFrame)
     private Runnable gameOverHandler;
 
+    // optional callback after a successful human move
+    private Runnable afterHumanMove;
+
     public ChessBoardPanel(GameState state,
                            SettingsManager settings,
                            HistoryPanel historyPanel) {
@@ -44,6 +48,10 @@ public class ChessBoardPanel extends JPanel {
         addMouseMotionListener(adapter);
 
         updatePreferredSize();
+    }
+
+    public void setAfterHumanMove(Runnable r) {
+        this.afterHumanMove = r;
     }
 
     /** Allow ChessFrame to swap in a loaded state & settings. */
@@ -359,6 +367,10 @@ public class ChessBoardPanel extends JPanel {
             historyPanel.reloadFromState();
             repaint();
 
+            if (afterHumanMove != null) {
+                afterHumanMove.run();
+            }
+
             // Check for game over
             if (state.isGameOver() && gameOverHandler != null) {
                 // Let the frame show the restart / exit dialog
@@ -415,3 +427,4 @@ public class ChessBoardPanel extends JPanel {
         };
     }
 }
+```
