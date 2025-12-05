@@ -31,7 +31,8 @@ This phase includes:
 - Multiple piece themes  
 - Save & Load  
 - Settings window  
-- UML class diagram  
+- UML class diagram
+- Pawn Promotion
 
 
 ---
